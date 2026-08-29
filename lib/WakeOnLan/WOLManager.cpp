@@ -9,10 +9,10 @@ IPAddress broadcastIP()
     const IPAddress mask = WiFi.subnetMask();
 
     return IPAddress(
-        ip[0] | static_cast<uint8_t>(~mask[0]),
-        ip[1] | static_cast<uint8_t>(~mask[1]),
-        ip[2] | static_cast<uint8_t>(~mask[2]),
-        ip[3] | static_cast<uint8_t>(~mask[3])
+        ip[0] | (~mask[0] & 0xFF),
+        ip[1] | (~mask[1] & 0xFF),
+        ip[2] | (~mask[2] & 0xFF),
+        ip[3] | (~mask[3] & 0xFF)
     );
 }
 
@@ -32,6 +32,7 @@ void sendWakeOnLan()
 {
     uint8_t magicPackege[102];
  
+    // IPAddress IP(192, 168, 1, 255);
     IPAddress IP = broadcastIP();
 
     createMagicPackage(magicPackege, MAC_PC);
