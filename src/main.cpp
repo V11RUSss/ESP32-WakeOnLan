@@ -18,16 +18,17 @@ const char* CLIENT_ID = "esp32-home";
 
 const uint32_t MQTT_RECONNECT_INTERVAL = 5000;
 uint32_t lastMQTTReconnect = 0;
+const uint32_t WIFI_RETRY_INTERVAL = 30000;
+uint32_t lastWiFiAttempt = 0;
 
 
 void connectWiFi() 
 {
     WiFi.mode(WIFI_STA);
-    WiFi.setAutoReconnect(true);
-    WiFi.begin(SSID_WIFI, PASS_WIFI);
+    WiFi.setAutoReconnect(false);
 
-    while (!WiFi.isConnected())
-        delay(500);
+    WiFi.begin(SSID_WIFI, PASS_WIFI);
+    lastWiFiAttempt = millis();
 }
 
 
@@ -97,8 +98,6 @@ void setup()
     mqttClient.setCallback(mqttCallback);
     mqttClient.setKeepAlive(30);
     mqttClient.setSocketTimeout(15);
-
-    connectMQTT();
 }
 
 
@@ -110,8 +109,14 @@ void loop()
     uint32_t now = millis();
 
     if (!WiFi.isConnected()) {
-        if (mqttClient.connected())
-            tlsClient.stop();
+        tlsClient.stop();
+
+        if (now - lastWiFiAttempt >= WIFI_RETRY_INTERVAL) {
+            lastWiFiAttempt = now;
+
+            WiFi.disconnect(false, false);
+            WiFi.begin(SSID_WIFI, PASS_WIFI);
+        }
 
         delay(100);
         return;
